@@ -42,20 +42,7 @@
 ;; mac-key-mode-map in your .emacs file:
 ;;
 ;;     (require 'mac-key-mode)
-;;     (define-key mac-key-mode-map [(alt l)] 'goto-line)
-;;
-;; When mac-key-mode is on, command key is recognized as 'alt' key,
-;; but option (alt) key is also recognized as 'alt' key.
-;; If you would like to use option (alt) key as meta key,
-;; add the below line to your .emacs.el.
-;;
-;; (add-hook 'mac-key-mode-hook
-;;        (lambda()
-;;          (interactive)
-;;          (if mac-key-mode
-;;              (setq mac-option-modifier 'meta)
-;;              (setq mac-option-modifier nil)
-;;              )))
+;;     (define-key mac-key-mode-map [(super l)] 'goto-line)
 ;;
 ;; Mac-key-mode takes advantage of additional functions, provided by
 ;; the mac-functions.patch <http://homepage.mac.com/zenitani/comp-e.html>.
@@ -75,6 +62,7 @@ when `mac-key-mode' is on.")
 
 (defcustom mac-key-mode-hook nil
   "The hook to run when mac-key-mode is toggled."
+
   :type 'hook
   :group 'mac-key-mode)
 
@@ -98,38 +86,38 @@ when `mac-key-mode' is on.")
 
 (defvar mac-key-mode-map
   (let ((map (make-sparse-keymap)))
-    (define-key map [(alt o)] (lambda()(interactive)(let(last-nonmenu-event)(menu-find-file-existing))))
-    (define-key map [(alt w)] 'mac-key-close-window)
-    (define-key map [(alt s)] 'save-buffer)
-    (define-key map [(alt shift s)] 'mac-key-save-as)
-    (define-key map [(alt i)] 'mac-key-show-in-finder)
-    (define-key map [(alt p)] 'print-buffer)
-    (define-key map [(alt q)] 'save-buffers-kill-emacs)
-    (define-key map [(alt z)] 'undo)
+    (define-key map [(super o)] (lambda()(interactive)(let(last-nonmenu-event)(menu-find-file-existing))))
+    (define-key map [(super w)] 'mac-key-close-window)
+    (define-key map [(super s)] 'save-buffer)
+    (define-key map [(super shift s)] 'mac-key-save-as)
+    (define-key map [(super i)] 'mac-key-show-in-finder)
+    (define-key map [(super p)] 'print-buffer)
+    (define-key map [(super q)] 'save-buffers-kill-emacs)
+    (define-key map [(super z)] 'undo)
     (when (require 'redo nil t)
       ;; requires redo+
-      (define-key map [(alt shift z)] 'redo))
-    (define-key map [(alt x)] 'clipboard-kill-region)
-    (define-key map [(alt c)] 'clipboard-kill-ring-save)
-    (define-key map [(alt v)] 'clipboard-yank)
-    (define-key map [(alt a)] 'mark-whole-buffer)
-    (define-key map [(alt f)] 'isearch-forward)
-    (define-key map [(alt meta f)] 'occur)
-    (define-key map [(alt g)] 'isearch-repeat-forward)
-    (define-key map [(alt shift g)] 'isearch-repeat-backward)
-    (define-key map [(alt l)] 'goto-line)
-    (define-key map [(alt t)] 'mac-font-panel-mode)
-    (define-key map [(alt m)] 'iconify-frame)
-    (define-key map [(alt \`)] 'other-frame)
-    (define-key map [(alt shift n)] 'make-frame-command)
-    (define-key map [(alt shift w)] 'delete-frame)
-    (define-key map [(alt \?)] 'info)
-    (define-key map [(alt /)] 'info)
-    (define-key map [(alt .)] 'keyboard-quit)
-    (define-key map [(alt up)] 'beginning-of-buffer)
-    (define-key map [(alt down)] 'end-of-buffer)
-    (define-key map [(alt left)] 'beginning-of-line)
-    (define-key map [(alt right)] 'end-of-line)
+      (define-key map [(super shift z)] 'redo))
+    (define-key map [(super x)] 'clipboard-kill-region)
+    (define-key map [(super c)] 'clipboard-kill-ring-save)
+    (define-key map [(super v)] 'clipboard-yank)
+    (define-key map [(super a)] 'mark-whole-buffer)
+    (define-key map [(super f)] 'isearch-forward)
+    (define-key map [(super meta f)] 'occur)
+    (define-key map [(super g)] 'isearch-repeat-forward)
+    (define-key map [(super shift g)] 'isearch-repeat-backward)
+    (define-key map [(super l)] 'goto-line)
+    (define-key map [(super t)] 'mac-font-panel-mode)
+    (define-key map [(super m)] 'iconify-frame)
+    (define-key map [(super \`)] 'other-frame)
+    (define-key map [(super shift n)] 'make-frame-command)
+    (define-key map [(super shift w)] 'delete-frame)
+    (define-key map [(super \?)] 'info)
+    (define-key map [(super /)] 'info)
+    (define-key map [(super .)] 'keyboard-quit)
+    (define-key map [(super up)] 'beginning-of-buffer)
+    (define-key map [(super down)] 'end-of-buffer)
+    (define-key map [(super left)] 'beginning-of-line)
+    (define-key map [(super right)] 'end-of-line)
     (define-key map [A-mouse-1] 'browse-url-at-mouse)
     (define-key map [C-down-mouse-1] 'mac-key-context-menu)
     (define-key map [mouse-3] 'mac-key-context-menu)
@@ -158,9 +146,9 @@ When Mac Key mode is enabled, mac-style key bindings are provided."
   :keymap 'mac-key-mode-map
   (if mac-key-mode
       (progn
+        (setq mac-command-modifier 'super
+              mac-option-modifier 'meta)
 
-        (setq mac-key-backup-command-modifier mac-command-modifier)
-        (setq mac-command-modifier 'alt)
         (if (boundp 'mac-key-mode-internal)
             (setq mac-key-mode-internal t))
 
@@ -204,7 +192,6 @@ When Mac Key mode is enabled, mac-style key bindings are provided."
           ))
     (progn
 
-      (setq mac-command-modifier mac-key-backup-command-modifier)
       (if (boundp 'mac-key-mode-internal)
           (setq mac-key-mode-internal nil))
 
