@@ -1,6 +1,7 @@
-;;; mac-key-mode.el --- provide mac-style key bindings on Carbon Emacs
+;;; mac-mnemonic-key-mode.el --- provide mac-style key bindings where most shortcuts have two keystrokes: the first one defines a group and the second one defines an action in this group.
 
 ;; Copyright (C) 2004-2010  Seiji Zenitani
+;; Copyright (C) 2023-2024  Alex Zolotko
 
 ;; Author: Seiji Zenitani <zenitani@mac.com>
 ;; $Id$
@@ -29,22 +30,22 @@
 
 ;;; Commentary:
 
-;; This package provides mac-key-mode, a minor mode that provides
+;; This package provides mac-mnemonic-key-mode, a minor mode that provides
 ;; mac-like key bindings and relevant elisp functions.
 ;;
 ;; To use this package, add these lines to your .emacs file:
 ;;
-;;     (require 'mac-key-mode)
-;;     (mac-key-mode 1)
+;;     (require 'mac-mnemonic-key-mode)
+;;     (mac-mnemonic-key-mode 1)
 ;;
-;; Note that mac-key-mode works better with redo+.el (but I don't use
+;; Note that mac-mnemonic-key-mode works better with redo+.el (but I don't use
 ;; it...)  In order to set additional key bindings, modify
-;; mac-key-mode-map in your .emacs file:
+;; mac-mnemonic-key-mode-map in your .emacs file:
 ;;
-;;     (require 'mac-key-mode)
-;;     (define-key mac-key-mode-map [(super l)] 'goto-line)
+;;     (require 'mac-mnemonic-key-mode)
+;;     (define-key mac-mnemonic-key-mode-map [(super l)] 'goto-line)
 ;;
-;; Mac-key-mode takes advantage of additional functions, provided by
+;; mac-mnemonic-key-mode takes advantage of additional functions, provided by
 ;; the mac-functions.patch <http://homepage.mac.com/zenitani/comp-e.html>.
 ;; (e.g. mac-spotlight-search, mac-spotlight-search etc.)
 
@@ -52,46 +53,56 @@
 ;;; Code:
 
 
-(defgroup mac-key-mode nil
-  "Mac-style key-binding mode."
+(defgroup mac-mnemonic-key-mode nil
+  "Mac-style key-binding mode where most shortcuts have two keystrokes."
   :group 'mac
   :version "22.3")
-(defconst mac-key-mode-lighter (char-to-string 8984) ; the command mark
+(defconst mac-mnemonic-key-mode-lighter (char-to-string 8984) ; the command mark
   "A lighter string which is displayed in the modeline
-when `mac-key-mode' is on.")
+when `mac-mnemonic-key-mode' is on.")
 
-(defcustom mac-key-mode-hook nil
-  "The hook to run when mac-key-mode is toggled."
+(defcustom mac-mnemonic-key-mode-hook nil
+  "The hook to run when mac-mnemonic-key-mode is toggled."
 
   :type 'hook
-  :group 'mac-key-mode)
+  :group 'mac-mnemonic-key-mode)
 
-(defcustom mac-key-advanced-setting t
-  "If non-nil, `mac-key-mode' activates addional settings:
+(defcustom mac-mnemonic-key-advanced-setting t
+  "If non-nil, `mac-mnemonic-key-mode' activates addional settings:
 1) menu items are added to the File menu and the Edit menu, and
 2) the SPC key invokes Quick Look information in dired-mode."
-  :group 'mac-key-mode
+  :group 'mac-mnemonic-key-mode
   :type 'boolean)
 
-(defvar mac-key-backup-command-modifier nil
+(defvar mac-mnemonic-key-backup-command-modifier nil
   "Internal variable.  Do not use this.")
 
 
 ;; process objects
-(defvar mac-key-speech-process nil
+(defvar mac-mnemonic-key-speech-process nil
   "The process object for text-to-speech subprocess.")
-(defvar mac-key-ql-process nil
+(defvar mac-mnemonic-key-ql-process nil
   "The process object for Quick Look subprocess.")
 
 
-(defvar mac-key-mode-map
-  (let ((map (make-sparse-keymap)))
+(defvar mac-mnemonic-key-mode-map
+  (let ((map (make-sparse-keymap))
+        (block-map (make-sparse-keymap))
+        (debug-map (make-sparse-keymap))
+        (editor-map (make-sparse-keymap))
+        (inspect-map (make-sparse-keymap))
+        (jump-map (make-sparse-keymap))
+        (kommit-map (make-sparse-keymap))
+        (line-map (make-sparse-keymap))
+        (navigate-map (make-sparse-keymap))
+        (project-map (make-sparse-keymap))
+        (refactor-map (make-sparse-keymap))
+        (test-map (make-sparse-keymap))
+        (utilities-map (make-sparse-keymap))
+        (window-map (make-sparse-keymap)))
     (define-key map [(super o)] (lambda()(interactive)(let(last-nonmenu-event)(menu-find-file-existing))))
-    (define-key map [(super w)] 'mac-key-close-window)
     (define-key map [(super s)] 'save-buffer)
-    (define-key map [(super shift s)] 'mac-key-save-as)
-    (define-key map [(super i)] 'mac-key-show-in-finder)
-    (define-key map [(super p)] 'print-buffer)
+    (define-key map [(super shift s)] 'mac-mnemonic-key-save-as)
     (define-key map [(super q)] 'save-buffers-kill-emacs)
     (define-key map [(super z)] 'undo)
     (when (require 'redo nil t)
@@ -105,8 +116,6 @@ when `mac-key-mode' is on.")
     (define-key map [(super meta f)] 'occur)
     (define-key map [(super g)] 'isearch-repeat-forward)
     (define-key map [(super shift g)] 'isearch-repeat-backward)
-    (define-key map [(super l)] 'goto-line)
-    (define-key map [(super t)] 'mac-font-panel-mode)
     (define-key map [(super m)] 'iconify-frame)
     (define-key map [(super \`)] 'other-frame)
     (define-key map [(super shift n)] 'make-frame-command)
@@ -119,55 +128,101 @@ when `mac-key-mode' is on.")
     (define-key map [(super left)] 'beginning-of-line)
     (define-key map [(super right)] 'end-of-line)
     (define-key map [A-mouse-1] 'browse-url-at-mouse)
-    (define-key map [C-down-mouse-1] 'mac-key-context-menu)
-    (define-key map [mouse-3] 'mac-key-context-menu)
-;;    (define-key map [C-mouse-1] 'mac-key-context-menu)
+    (define-key map [C-down-mouse-1] 'mac-mnemonic-key-context-menu)
+    (define-key map [mouse-3] 'mac-mnemonic-key-context-menu)
+;;    (define-key map [C-mouse-1] 'mac-mnemonic-key-context-menu)
     (define-key map [A-S-mouse-1] 'mouse-buffer-menu)
-    (define-key map [S-down-mouse-1] 'mac-key-shift-mouse-select)
+    (define-key map [S-down-mouse-1] 'mac-mnemonic-key-shift-mouse-select)
+
+    (define-key map [(super b)] block-map)
+    (define-key map [(super d)] debug-map)
+    (define-key map [(super e)] editor-map)
+    (define-key map [(super i)] inspect-map)
+    (define-key map [(super j)] jump-map)
+    (define-key map [(super k)] kommit-map)
+
+    (define-key map [(super l)] line-map)
+    (define-key line-map (kbd "b") 'bookmark-set)
+    (define-key line-map [(super b)] 'bookmark-set)
+    (define-key line-map (kbd "c") 'comment-line)
+    (define-key line-map [(super c)] 'comment-line)
+    (define-key line-map (kbd "d") 'duplicate-line)
+    (define-key line-map [(super d)] 'duplicate-line)
+    (define-key line-map (kbd "g") 'goto-line)
+    (define-key line-map [(super g)] 'goto-line)
+    (define-key line-map (kbd "i") 'lisp-indent-line)
+    (define-key line-map [(super i)] 'lisp-indent-line)
+    (define-key line-map (kbd "j") 'join-line)
+    (define-key line-map [(super j)] 'join-line)
+    (define-key line-map (kbd "n") 'doom/toggle-line-numbers)
+    (define-key line-map [(super n)] 'doom/toggle-line-numbers)
+    (define-key line-map (kbd "r") 'reverse-region)
+    (define-key line-map [(super r)] 'reverse-region)
+    (define-key line-map (kbd "s") 'sort-lines)
+    (define-key line-map [(super s)] 'sort-lines)
+    (define-key line-map (kbd "x") 'kill-whole-line)
+    (define-key line-map [(super x)] 'kill-whole-line)
+
+    (define-key map [(super n)] navigate-map)
+    (define-key map [(super p)] project-map)
+    (define-key map [(super r)] refactor-map)
+    (define-key map [(super t)] test-map)
+
+    (define-key map [(super u)] utilities-map)
+    (define-key utilities-map (kbd "a") 'execute-extended-command)
+    (define-key utilities-map [(super a)] 'execute-extended-command)
+
+    (define-key map [(super w)] window-map)
+    (define-key window-map (kbd "p") '+treemacs/toggle)
+    (define-key window-map [(super p)] '+treemacs/toggle)
+    (define-key window-map (kbd "t") 'term)
+    (define-key window-map [(super t)] 'term)
+    (define-key window-map (kbd "v") 'magit)
+    (define-key window-map [(super v)] 'magit)
 
     map)
-  "Keymap for `mac-key-mode'.")
+  "Keymap for `mac-mnemonic-key-mode'.")
 
 ;; mode-line menu
-(define-key-after mode-line-mode-menu [mac-key-mode]
+(define-key-after mode-line-mode-menu [mac-mnemonic-key-mode]
   `(menu-item ,(purecopy
-                (concat "Mac Key (" mac-key-mode-lighter ")"))
-              mac-key-mode :button (:toggle . mac-key-mode))
+                (concat "Mac Mnemonic Key (" mac-mnemonic-key-mode-lighter ")"))
+              mac-mnemonic-key-mode :button (:toggle . mac-mnemonic-key-mode))
   'highlight-changes-mode)
 
 ;;;###autoload
-(define-minor-mode mac-key-mode
-  "Toggle Mac Key mode.
-With arg, turn Mac Key mode on if arg is positive.
-When Mac Key mode is enabled, mac-style key bindings are provided."
+(define-minor-mode mac-mnemonic-key-mode
+  "Toggle Mac Mnemonic Key mode.
+With arg, turn Mac Mnemonic Key mode on if arg is positive.
+When Mac Mnemonic Key mode is enabled, mac-style key bindings are provided."
   :global t
-  :group 'mac-key-mode
-  :lighter (" " mac-key-mode-lighter)
-  :keymap 'mac-key-mode-map
-  (if mac-key-mode
+  :group 'mac-mnemonic-key-mode
+  :lighter (" " mac-mnemonic-key-mode-lighter)
+  :keymap 'mac-mnemonic-key-mode-map
+  (if mac-mnemonic-key-mode
       (progn
         (setq mac-command-modifier 'super
               mac-option-modifier 'meta)
 
-        (if (boundp 'mac-key-mode-internal)
-            (setq mac-key-mode-internal t))
+        (if (boundp 'mac-mnemonic-key-mode-internal)
+            (setq mac-mnemonic-key-mode-internal t))
 
         ;; turn on advanced settings
-        (when mac-key-advanced-setting
+        (when mac-mnemonic-key-advanced-setting
 
           ;; menu items
-          (define-key-after menu-bar-file-menu [mac-key-file-separator]
+          (define-key-after menu-bar-file-menu [mac-mnemonic-key-file-separator]
             '("--" . nil) 'recover-session)
-          (define-key-after menu-bar-file-menu [mac-key-show-in-finder]
-            '(menu-item "Show In Finder" mac-key-show-in-finder
+          (define-key-after menu-bar-file-menu [mac-mnemonic-key-show-in-finder]
+            '(menu-item "Show In Finder" mac-mnemonic-key-show-in-finder
               :help "Display current file/directory in a Finder window"
               :enable (or (and (boundp 'buffer-file-name) buffer-file-name)
                           (and (boundp 'dired-directory) dired-directory)))
-            'mac-key-file-separator)
-          (define-key-after menu-bar-file-menu [mac-key-open-terminal]
-            '(menu-item "Open Terminal" mac-key-open-terminal
+            'mac-mnemonic-key-file-separator)
+          (define-key-after menu-bar-file-menu [mac-mnemonic-key-open-terminal]
+            '(menu-item "Open Terminal" mac-mnemonic-key-open-terminal
               :help "Launch Terminal.app and go to the relevant directory")
-            'mac-key-show-in-finder)
+            'mac-mnemonic-key-show-in-finder)
           (define-key-after menu-bar-edit-menu [redo]
             '(menu-item "Redo" redo
             :help "Redo the most recent undo"
@@ -178,57 +233,57 @@ When Mac Key mode is enabled, mac-style key bindings are provided."
                              (eq (cdr buffer-undo-list) pending-undo-list)
                              )))
             'undo)
-          (define-key-after menu-bar-edit-menu [mac-key-edit-separator]
+          (define-key-after menu-bar-edit-menu [mac-mnemonic-key-edit-separator]
             '("--" . nil) 'redo)
 
-          ;; assign mac-key-quick-look to the SPC key
+          ;; assign mac-mnemonic-key-quick-look to the SPC key
           (if (boundp 'dired-mode-map)
-              (define-key dired-mode-map " " 'mac-key-quick-look)
+              (define-key dired-mode-map " " 'mac-mnemonic-key-quick-look)
             (add-hook 'dired-mode-hook
                       (lambda () (interactive)
-                        (define-key dired-mode-map " " 'mac-key-quick-look)))
+                        (define-key dired-mode-map " " 'mac-mnemonic-key-quick-look)))
             )
 
           ))
     (progn
 
-      (if (boundp 'mac-key-mode-internal)
-          (setq mac-key-mode-internal nil))
+      (if (boundp 'mac-mnemonic-key-mode-internal)
+          (setq mac-mnemonic-key-mode-internal nil))
 
       ;; turn off advanced settings
-      (when mac-key-advanced-setting
+      (when mac-mnemonic-key-advanced-setting
 
         ;; menu items
-        (global-unset-key [menu-bar file mac-key-file-separator])
-        (global-unset-key [menu-bar file mac-key-show-in-finder])
-        (global-unset-key [menu-bar file mac-key-open-terminal])
+        (global-unset-key [menu-bar file mac-mnemonic-key-file-separator])
+        (global-unset-key [menu-bar file mac-mnemonic-key-show-in-finder])
+        (global-unset-key [menu-bar file mac-mnemonic-key-open-terminal])
         (global-unset-key [menu-bar edit redo])
-        (global-unset-key [menu-bar edit mac-key-edit-separator])
+        (global-unset-key [menu-bar edit mac-mnemonic-key-edit-separator])
 
         ;; restore SPC to dired-next-line (a bad way to deal with it)
         (if (boundp 'dired-mode-map)
             (define-key dired-mode-map " " 'dired-next-line))
         (remove-hook 'dired-mode-hook
                      (lambda () (interactive)
-                       (define-key dired-mode-map " " 'mac-key-quick-look)))
+                       (define-key dired-mode-map " " 'mac-mnemonic-key-quick-look)))
 
         ))
     ))
 
 
 ;; close window (command + W)
-(defun mac-key-close-window ()
+(defun mac-mnemonic-key-close-window ()
   "Close the Quick Look window or kill the current buffer."
   (interactive)
-  (let ((mybuffer (and mac-key-ql-process
-                       (process-buffer mac-key-ql-process))))
+  (let ((mybuffer (and mac-mnemonic-key-ql-process
+                       (process-buffer mac-mnemonic-key-ql-process))))
     (if (buffer-live-p mybuffer)
         (kill-buffer mybuffer)
       (kill-this-buffer))
     ))
 
 ;; save as.. dialog (shift + command + S)
-(defun mac-key-save-as (filename &optional wildcards)
+(defun mac-mnemonic-key-save-as (filename &optional wildcards)
   "Write current buffer to another file using standard file open dialog."
   (interactive
    (let (last-nonmenu-event)
@@ -237,7 +292,7 @@ When Mac Key mode is enabled, mac-style key bindings are provided."
 
 
 ;; utf8 code by Ando-san
-(defun mac-key-applescript-utf8data (str)
+(defun mac-mnemonic-key-applescript-utf8data (str)
   (let ((len (length str))
         (len1 31) ;XXX: 254/2/4. utf-8 is 4byte per code point at most.
         (reslist '(")"))
@@ -258,7 +313,7 @@ When Mac Key mode is enabled, mac-style key bindings are provided."
 
 ;; Show In Finder (command + I)
 
-(defun mac-key-show-in-finder (&optional path)
+(defun mac-mnemonic-key-show-in-finder (&optional path)
   "Display current file/directory in a Finder window"
   (interactive)
   (let ((item (or path
@@ -276,7 +331,7 @@ When Mac Key mode is enabled, mac-style key bindings are provided."
             (do-applescript
              (concat
               "tell application \"Finder\" to select ("
-              (mac-key-applescript-utf8data item)
+              (mac-mnemonic-key-applescript-utf8data item)
               " as POSIX file)"))
             (if (fboundp 'mac-process-activate)
                 (mac-process-activate "com.apple.finder")
@@ -289,7 +344,7 @@ When Mac Key mode is enabled, mac-style key bindings are provided."
 
 ;; Open Terminal.app
 
-(defun mac-key-open-terminal (&optional path)
+(defun mac-mnemonic-key-open-terminal (&optional path)
   "Launch Terminal and go to the relevant directory"
   (interactive)
   (let ((item (or path default-directory)))
@@ -305,7 +360,7 @@ When Mac Key mode is enabled, mac-style key bindings are provided."
             (do-applescript
              (concat "tell application \"Terminal\" to do script"
                      " with command \"cd \" & quoted form of "
-                     (mac-key-applescript-utf8data item)))
+                     (mac-mnemonic-key-applescript-utf8data item)))
             (if (fboundp 'mac-process-activate)
                 (mac-process-activate "com.apple.Terminal")
               (do-applescript "tell application \"Terminal\" to activate"))
@@ -318,29 +373,29 @@ When Mac Key mode is enabled, mac-style key bindings are provided."
 
 ;; Text-to-Speech functions
 
-(defun mac-key-speak-buffer ()
+(defun mac-mnemonic-key-speak-buffer ()
   "Speak buffer contents."
   (interactive)
-  (mac-key-speak-region (point-min)(point-max)))
+  (mac-mnemonic-key-speak-region (point-min)(point-max)))
 
-(defun mac-key-speak-region (beg end)
+(defun mac-mnemonic-key-speak-region (beg end)
   "Speak the region contents."
   (interactive "r")
-  (mac-key-stop-speaking)
+  (mac-mnemonic-key-stop-speaking)
   (let ((buffer-file-coding-system 'utf-8-unix)
         (tmp-file (make-temp-file "emacs-speech-" nil ".txt")))
     (write-region beg end tmp-file nil)
     (message "Invoking text-to-speech...")
-    (setq mac-key-speech-process
+    (setq mac-mnemonic-key-speech-process
           (start-process "text-to-speech" "*Text-to-Speech Output*"
                          "/usr/bin/say" "-f" tmp-file))
     ))
 
-(defun mac-key-stop-speaking ()
+(defun mac-mnemonic-key-stop-speaking ()
   "Terminate the text-to-speech subprocess, if it is running."
   (interactive)
-  (let ((mybuffer (and mac-key-speech-process
-                       (process-buffer mac-key-speech-process))))
+  (let ((mybuffer (and mac-mnemonic-key-speech-process
+                       (process-buffer mac-mnemonic-key-speech-process))))
     (when (buffer-live-p mybuffer)
       (kill-buffer mybuffer)
       (beep))
@@ -350,24 +405,24 @@ When Mac Key mode is enabled, mac-style key bindings are provided."
 ;; Quick Look
 ;; inspired by http://journal.mycom.co.jp/column/osx/263/index.html
 
-(defun mac-key-quick-look ()
+(defun mac-mnemonic-key-quick-look ()
   "Display the Quick Look information for the current line's file.
 You might use dired-mode-hook to use this function in dired mode,
 like this:
 
     \(add-hook 'dired-mode-hook
-       (lambda() (local-set-key \" \" 'mac-key-quick-look)))
+       (lambda() (local-set-key \" \" 'mac-mnemonic-key-quick-look)))
 "
   (interactive)
 
-  (let ((mybuffer (and mac-key-ql-process
-                       (process-buffer mac-key-ql-process)))
+  (let ((mybuffer (and mac-mnemonic-key-ql-process
+                       (process-buffer mac-mnemonic-key-ql-process)))
         (item default-directory))
     (cond
      ((buffer-live-p mybuffer)
       (kill-buffer mybuffer))
-;;       (eq (process-status mac-key-ql-process) 'run)
-;;       (kill-process mac-key-ql-process))
+;;       (eq (process-status mac-mnemonic-key-ql-process) 'run)
+;;       (kill-process mac-mnemonic-key-ql-process))
      ((file-remote-p item)
       (error "This item is located on a remote system."))
      (t
@@ -376,7 +431,7 @@ like this:
           (setq item (dired-get-file-for-visit))
         (error err))
       (condition-case err
-          (setq mac-key-ql-process
+          (setq mac-mnemonic-key-ql-process
                 (start-process "quicklook" "*QuickLook Output*"
                                "/usr/bin/qlmanage" "-p"
                                (shell-quote-argument item)))
@@ -386,7 +441,7 @@ like this:
 ;; shift+click
 ;; Contributed by Dave Peck
 
-(defun mac-key-shift-mouse-select (event)
+(defun mac-mnemonic-key-shift-mouse-select (event)
   "Set the mark and then move point to the position clicked on with
 the mouse.  This should be bound to a mouse click event type."
   (interactive "e")
@@ -400,7 +455,7 @@ the mouse.  This should be bound to a mouse click event type."
 
 ;; Contextual menu
 
-(defun mac-key-context-menu (event)
+(defun mac-mnemonic-key-context-menu (event)
   "Pop up a contextual menu."
   (interactive "e")
 
@@ -472,12 +527,12 @@ the mouse.  This should be bound to a mouse click event type."
       ["Start Speaking"
        (if (and mark-active
                 (<= (region-beginning) pt) (<= pt (region-end)) )
-           (mac-key-speak-region beg end)
-         (mac-key-speak-buffer) )
+           (mac-mnemonic-key-speak-region beg end)
+         (mac-mnemonic-key-speak-buffer) )
        :help "Speak text through the sound output"]
-      ["Stop Speaking" (mac-key-stop-speaking)
-       :active (and mac-key-speech-process
-                    (eq (process-status mac-key-speech-process) 'run))
+      ["Stop Speaking" (mac-mnemonic-key-stop-speaking)
+       :active (and mac-mnemonic-key-speech-process
+                    (eq (process-status mac-mnemonic-key-speech-process) 'run))
        :help "Stop speaking"]
      )
      ["--" nil]
@@ -486,6 +541,6 @@ the mouse.  This should be bound to a mouse click event type."
      ))))
 
 
-(provide 'mac-key-mode)
+(provide 'mac-mnemonic-key-mode)
 
-;;; mac-key-mode.el ends here.
+;;; mac-mnemonic-key-mode.el ends here.
