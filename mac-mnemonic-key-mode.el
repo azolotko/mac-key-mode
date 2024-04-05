@@ -141,6 +141,8 @@ when `mac-mnemonic-key-mode' is on.")
     (define-key map [(super j)] jump-map)
     (define-key map [(super k)] kommit-map)
 
+    (define-key map (kbd "S-<escape>") 'delete-window)
+
     (define-key map [(super l)] line-map)
     (define-key line-map (kbd "b") 'bookmark-set)
     (define-key line-map [(super b)] 'bookmark-set)
@@ -164,6 +166,13 @@ when `mac-mnemonic-key-mode' is on.")
     (define-key line-map [(super x)] 'kill-whole-line)
 
     (define-key map [(super n)] navigate-map)
+    (define-key navigate-map (kbd "f") '+vertico/project-search)
+    (define-key navigate-map [(super f)] '+vertico/project-search)
+    (define-key navigate-map (kbd "o") 'projectile-find-file)
+    (define-key navigate-map [(super o)] 'projectile-find-file)
+    (define-key navigate-map (kbd "r") 'projectile-recentf)
+    (define-key navigate-map [(super r)] 'projectile-recentf)
+
     (define-key map [(super p)] project-map)
     (define-key map [(super r)] refactor-map)
     (define-key map [(super t)] test-map)
