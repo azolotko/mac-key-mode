@@ -200,8 +200,8 @@ when `mac-mnemonic-key-mode' is on.")
     (define-key map [(super w)] window-map)
     (define-key window-map (kbd "p") '+treemacs/toggle)
     (define-key window-map [(super p)] '+treemacs/toggle)
-    (define-key window-map (kbd "t") 'mac-mnemonic-key-term-split-horizontal)
-    (define-key window-map [(super t)] 'mac-mnemonic-key-term-split-horizontal)
+    (define-key window-map (kbd "t") 'projectile-run-vterm)
+    (define-key window-map [(super t)] 'projectile-run-vterm)
     (define-key window-map (kbd "v") 'magit)
     (define-key window-map [(super v)] 'magit)
 
@@ -535,14 +535,6 @@ the mouse.  This should be bound to a mouse click event type."
      ["Buffers" mouse-buffer-menu
        :help "Pop up a menu of buffers for selection with the mouse"]
      ))))
-
-
-(defun mac-mnemonic-key-term-split-horizontal ()
-  "Split the window horizontally and open `term` in the new window."
-  (interactive)
-  (split-window-below)
-  (other-window 1)
-  (term "/usr/bin/zsh"))
 
 (provide 'mac-mnemonic-key-mode)
 
