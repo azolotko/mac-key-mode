@@ -5,11 +5,9 @@
 
 ;; Author: Seiji Zenitani <zenitani@mac.com>
 ;; $Id$
-;; Keywords: tools, mac
+;; Keywords: tools, mac, mnemonic
 ;; Created: 2004-12-27
-;; Compatibility: Mac OS X 10.5 (Carbon Emacs)
-;; URL(jp): http://macwiki.sourceforge.jp/wiki/index.php/MacKeyMode
-;; URL(en): http://www.emacswiki.org/cgi-bin/emacs-en/MacKeyMode
+;; URL(en): https://github.com/azolotko/mac-mnemonic-key-mode
 
 ;; Contributors: Tetsuro Kurita, Nozomu Ando, Dave Peck
 
@@ -105,9 +103,7 @@ when `mac-mnemonic-key-mode' is on.")
     (define-key map [(super shift s)] 'mac-mnemonic-key-save-as)
     (define-key map [(super q)] 'save-buffers-kill-emacs)
     (define-key map [(super z)] 'undo)
-    (when (require 'redo nil t)
-      ;; requires redo+
-      (define-key map [(super shift z)] 'redo))
+    (define-key map [(super shift z)] 'undo-fu-only-redo)
     (define-key map [(super x)] 'clipboard-kill-region)
     (define-key map [(super c)] 'clipboard-kill-ring-save)
     (define-key map [(super v)] 'clipboard-yank)
@@ -136,12 +132,25 @@ when `mac-mnemonic-key-mode' is on.")
 
     (define-key map [(super b)] block-map)
     (define-key map [(super d)] debug-map)
+
     (define-key map [(super e)] editor-map)
+    (define-key editor-map (kbd "x") 'kill-buffer-and-window)
+    (define-key editor-map [(super x)] 'kill-buffer-and-window)
+
     (define-key map [(super i)] inspect-map)
+
     (define-key map [(super j)] jump-map)
+    (define-key jump-map (kbd "d") 'xref-find-definitions)
+    (define-key jump-map [(super d)] 'xref-find-definitions)
+    (define-key jump-map (kbd "r") 'ff-find-related-file)
+    (define-key jump-map [(super r)] 'ff-find-related-file)
+
     (define-key map [(super k)] kommit-map)
 
     (define-key map (kbd "S-<escape>") 'delete-window)
+    (define-key map (kbd "s-[") 'better-jumper-jump-backward)
+    (define-key map (kbd "s-]") 'better-jumper-jump-forward)
+    (define-key map [(super h)] 'iconify-frame)
 
     (define-key map [(super l)] line-map)
     (define-key line-map (kbd "b") 'bookmark-set)
@@ -170,10 +179,17 @@ when `mac-mnemonic-key-mode' is on.")
     (define-key navigate-map [(super f)] '+vertico/project-search)
     (define-key navigate-map (kbd "o") 'projectile-find-file)
     (define-key navigate-map [(super o)] 'projectile-find-file)
-    (define-key navigate-map (kbd "r") 'projectile-recentf)
-    (define-key navigate-map [(super r)] 'projectile-recentf)
+    (define-key navigate-map (kbd "r") 'consult-recent-file) ; 'projectile-recentf)
+    (define-key navigate-map [(super r)] 'consult-recent-file) ; 'projectile-recentf)
+    (define-key navigate-map (kbd "u") 'xref-find-references)
+    (define-key navigate-map [(super u)] 'xref-find-references)
 
     (define-key map [(super p)] project-map)
+    (define-key project-map (kbd "o") (lambda()(interactive)(call-interactively 'dired 'projectile-add-known-project)))
+    (define-key project-map [(super o)] (lambda()(interactive)(call-interactively 'dired 'projectile-add-known-project)))
+    (define-key project-map (kbd "p") 'projectile-switch-project)
+    (define-key project-map [(super p)] 'projectile-switch-project)
+
     (define-key map [(super r)] refactor-map)
     (define-key map [(super t)] test-map)
 
@@ -184,8 +200,8 @@ when `mac-mnemonic-key-mode' is on.")
     (define-key map [(super w)] window-map)
     (define-key window-map (kbd "p") '+treemacs/toggle)
     (define-key window-map [(super p)] '+treemacs/toggle)
-    (define-key window-map (kbd "t") 'term)
-    (define-key window-map [(super t)] 'term)
+    (define-key window-map (kbd "t") 'mac-mnemonic-key-term-split-horizontal)
+    (define-key window-map [(super t)] 'mac-mnemonic-key-term-split-horizontal)
     (define-key window-map (kbd "v") 'magit)
     (define-key window-map [(super v)] 'magit)
 
@@ -348,35 +364,6 @@ When Mac Mnemonic Key mode is enabled, mac-style key bindings are provided."
             )
         (error err)))
 
-     )))
-
-
-;; Open Terminal.app
-
-(defun mac-mnemonic-key-open-terminal (&optional path)
-  "Launch Terminal and go to the relevant directory"
-  (interactive)
-  (let ((item (or path default-directory)))
-
-    (cond
-     ((not (stringp item)))
-     ((file-remote-p item)
-      (error "This item is located on a remote system."))
-     ((file-directory-p item)
-      (setq item (expand-file-name item))
-      (condition-case err
-          (progn
-            (do-applescript
-             (concat "tell application \"Terminal\" to do script"
-                     " with command \"cd \" & quoted form of "
-                     (mac-mnemonic-key-applescript-utf8data item)))
-            (if (fboundp 'mac-process-activate)
-                (mac-process-activate "com.apple.Terminal")
-              (do-applescript "tell application \"Terminal\" to activate"))
-            )
-        (error err))
-      )
-     (t (error "An error occured"))
      )))
 
 
@@ -549,6 +536,13 @@ the mouse.  This should be bound to a mouse click event type."
        :help "Pop up a menu of buffers for selection with the mouse"]
      ))))
 
+
+(defun mac-mnemonic-key-term-split-horizontal ()
+  "Split the window horizontally and open `term` in the new window."
+  (interactive)
+  (split-window-below)
+  (other-window 1)
+  (term "/usr/bin/zsh"))
 
 (provide 'mac-mnemonic-key-mode)
 
