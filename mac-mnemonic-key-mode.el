@@ -138,8 +138,12 @@ menu items are added to the File menu and the Edit menu."
     (define-key jump-map [(super r)] 'ff-find-related-file)
 
     (define-key map [(super k)] kommit-map)
+    (define-key kommit-map (kbd "c") 'magit-commit-create)
+    (define-key kommit-map [(super c)] 'magit-commit-create)
     (define-key kommit-map (kbd "l") 'magit-pull)
     (define-key kommit-map [(super l)] 'magit-pull)
+    (define-key kommit-map (kbd "p") 'magit-push)
+    (define-key kommit-map [(super p)] 'magit-push)
 
     (define-key map (kbd "S-<escape>") 'delete-window)
     (define-key map (kbd "s-[") 'better-jumper-jump-backward)
