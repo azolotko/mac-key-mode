@@ -197,6 +197,8 @@ menu items are added to the File menu and the Edit menu."
     (define-key window-map [(super t)] 'projectile-run-vterm)
     (define-key window-map (kbd "v") 'magit)
     (define-key window-map [(super v)] 'magit)
+    (define-key window-map (kbd "x") 'delete-window)
+    (define-key window-map [(super x)] 'delete-window)
     (define-key window-map (kbd "w") 'ace-window)
     (define-key window-map [(super w)] 'ace-window)
 
