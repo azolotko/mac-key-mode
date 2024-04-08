@@ -9,7 +9,7 @@
 ;; Created: 2004-12-27
 ;; URL(en): https://github.com/azolotko/mac-mnemonic-key-mode
 
-;; Contributors: Tetsuro Kurita, Nozomu Ando, Dave Peck
+;; Contributors: Tetsuro Kurita, Nozomu Ando, Dave Peck, Alex Zolotko
 
 ;; This file is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -42,11 +42,6 @@
 ;;
 ;;     (require 'mac-mnemonic-key-mode)
 ;;     (define-key mac-mnemonic-key-mode-map [(super l)] 'goto-line)
-;;
-;; mac-mnemonic-key-mode takes advantage of additional functions, provided by
-;; the mac-functions.patch <http://homepage.mac.com/zenitani/comp-e.html>.
-;; (e.g. mac-spotlight-search, mac-spotlight-search etc.)
-
 
 ;;; Code:
 
