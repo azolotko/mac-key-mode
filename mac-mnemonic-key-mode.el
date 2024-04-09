@@ -121,6 +121,8 @@ menu items are added to the File menu and the Edit menu."
     (define-key map [(super d)] debug-map)
 
     (define-key map [(super e)] editor-map)
+    (define-key editor-map (kbd "f") 'lsp-format-buffer)
+    (define-key editor-map [(super f)] 'lsp-format-buffer)
     (define-key editor-map (kbd "x") 'kill-buffer-and-window)
     (define-key editor-map [(super x)] 'kill-buffer-and-window)
 
@@ -281,27 +283,6 @@ When Mac Mnemonic Key mode is enabled, mac-style key bindings are provided."
    (let (last-nonmenu-event)
      (find-file-read-args "Write file: " nil)))
    (write-file filename))
-
-
-;; utf8 code by Ando-san
-(defun mac-mnemonic-key-applescript-utf8data (str)
-  (let ((len (length str))
-        (len1 31) ;XXX: 254/2/4. utf-8 is 4byte per code point at most.
-        (reslist '(")"))
-        pos epos)
-    (setq pos len)
-    (while (> pos 0)
-      (setq epos pos)
-      (setq pos (max (- pos len1) 0))
-      (setq reslist (cons " & (\307data utf8"
-                          (cons (mapconcat (lambda (ch) (format "%02X" ch))
-                                           (encode-coding-string
-                                            (substring str pos epos)
-                                            'utf-8) "")
-                                (cons "\310 as Unicode text)"
-                                      reslist)))))
-    (apply 'concat "(\"\"" reslist)))
-
 
 ;; shift+click
 ;; Contributed by Dave Peck
