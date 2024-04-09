@@ -191,8 +191,8 @@ menu items are added to the File menu and the Edit menu."
     (define-key utilities-map [(super a)] 'execute-extended-command)
 
     (define-key map [(super w)] window-map)
-    (define-key window-map (kbd "p") '+treemacs/toggle)
-    (define-key window-map [(super p)] '+treemacs/toggle)
+    (define-key window-map (kbd "p") 'treemacs-select-window)
+    (define-key window-map [(super p)] 'treemacs-select-window)
     (define-key window-map (kbd "t") 'projectile-run-vterm)
     (define-key window-map [(super t)] 'projectile-run-vterm)
     (define-key window-map (kbd "v") 'magit)
