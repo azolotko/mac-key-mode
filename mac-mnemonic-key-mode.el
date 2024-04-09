@@ -110,6 +110,8 @@ menu items are added to the File menu and the Edit menu."
     (define-key map [(super down)] 'end-of-buffer)
     (define-key map [(super left)] 'beginning-of-line)
     (define-key map [(super right)] 'end-of-line)
+    (define-key map (kbd "A-<left>") 'backward-word)
+    (define-key map (kbd "A-<right>") 'forward-word)
     (define-key map [A-mouse-1] 'browse-url-at-mouse)
     (define-key map [C-down-mouse-1] 'mac-mnemonic-key-context-menu)
     (define-key map [mouse-3] 'mac-mnemonic-key-context-menu)
@@ -256,7 +258,8 @@ When Mac Mnemonic Key mode is enabled, mac-style key bindings are provided."
           (define-key minibuffer-local-map [(super x)] 'clipboard-kill-region)
           (define-key minibuffer-local-map [(super left)] 'beginning-of-line)
           (define-key minibuffer-local-map [(super right)] 'end-of-line)
-
+          (define-key minibuffer-local-map (kbd "A-<left>") 'backward-word)
+          (define-key minibuffer-local-map (kbd "A-<right>") 'forward-word)
           ))
     (progn
 
