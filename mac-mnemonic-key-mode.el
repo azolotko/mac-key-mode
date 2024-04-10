@@ -123,31 +123,44 @@ menu items are added to the File menu and the Edit menu."
     (define-key map [(super d)] debug-map)
 
     (define-key map [(super e)] editor-map)
-    (define-key editor-map (kbd "f") 'lsp-format-buffer)
-    (define-key editor-map [(super f)] 'lsp-format-buffer)
+    (define-key editor-map (kbd "f") 'clang-format-buffer)
+    (define-key editor-map [(super f)] 'clang-format-buffer)
     (define-key editor-map (kbd "x") 'kill-buffer-and-window)
     (define-key editor-map [(super x)] 'kill-buffer-and-window)
+
+    (define-key map [(super h)] 'iconify-frame)
+
 
     (define-key map [(super i)] inspect-map)
 
     (define-key map [(super j)] jump-map)
     (define-key jump-map (kbd "d") 'xref-find-definitions)
     (define-key jump-map [(super d)] 'xref-find-definitions)
+    (define-key jump-map (kbd "j") 'avy-goto-word-or-subword-1)
+    (define-key jump-map [(super j)] 'avy-goto-word-or-subword-1)
     (define-key jump-map (kbd "r") 'ff-find-related-file)
     (define-key jump-map [(super r)] 'ff-find-related-file)
 
     (define-key map [(super k)] kommit-map)
+    (define-key kommit-map (kbd "b") 'magit-branch-or-checkout)
+    (define-key kommit-map [(super b)] 'magit-branch-or-checkout)
+    (define-key kommit-map (kbd "c") 'magit-commit-create)
+    (define-key kommit-map [(super c)] 'magit-commit-create)
     (define-key kommit-map (kbd "c") 'magit-commit-create)
     (define-key kommit-map [(super c)] 'magit-commit-create)
     (define-key kommit-map (kbd "l") 'magit-pull)
     (define-key kommit-map [(super l)] 'magit-pull)
     (define-key kommit-map (kbd "p") 'magit-push)
     (define-key kommit-map [(super p)] 'magit-push)
+    (define-key kommit-map (kbd "y") 'magit-blame-addition)
+    (define-key kommit-map [(super y)] 'magit-blame-addition)
 
     (define-key map (kbd "S-<escape>") 'delete-window)
+    (define-key map (kbd "S-<tab>") 'decrease-left-margin)
+    (define-key map (kbd "<backtab>") 'decrease-left-margin)
+
     (define-key map (kbd "s-[") 'better-jumper-jump-backward)
     (define-key map (kbd "s-]") 'better-jumper-jump-forward)
-    (define-key map [(super h)] 'iconify-frame)
 
     (define-key map [(super l)] line-map)
     (define-key line-map (kbd "b") 'bookmark-set)
@@ -186,6 +199,8 @@ menu items are added to the File menu and the Edit menu."
     (define-key project-map [(super o)] (lambda()(interactive)(call-interactively 'dired 'projectile-add-known-project)))
     (define-key project-map (kbd "p") 'projectile-switch-project)
     (define-key project-map [(super p)] 'projectile-switch-project)
+    (define-key project-map (kbd "r") 'projectile-replace)
+    (define-key project-map [(super r)] 'projectile-replace)
 
     (define-key map [(super r)] refactor-map)
     (define-key map [(super t)] test-map)
