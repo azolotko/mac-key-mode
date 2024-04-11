@@ -110,6 +110,8 @@ menu items are added to the File menu and the Edit menu."
     (define-key map [(super down)] 'end-of-buffer)
     (define-key map [(super left)] 'beginning-of-line)
     (define-key map [(super right)] 'end-of-line)
+    (define-key map [(super \{)] 'previous-buffer)
+    (define-key map [(super \})] 'next-buffer)
     (define-key map (kbd "A-<left>") 'backward-word)
     (define-key map (kbd "A-<right>") 'forward-word)
     (define-key map [A-mouse-1] 'browse-url-at-mouse)
