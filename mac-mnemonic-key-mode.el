@@ -95,7 +95,7 @@ menu items are added to the File menu and the Edit menu."
     (define-key map [(super c)] 'clipboard-kill-ring-save)
     (define-key map [(super v)] 'clipboard-yank)
     (define-key map [(super a)] 'mark-whole-buffer)
-    (define-key map [(super f)] 'isearch-forward)
+    (define-key map [(super f)] 'isearch-with-initial-region)
     (define-key map [(super meta f)] 'occur)
     (define-key map [(super g)] 'isearch-repeat-forward)
     (define-key map [(super shift g)] 'isearch-repeat-backward)
@@ -163,6 +163,8 @@ menu items are added to the File menu and the Edit menu."
 
     (define-key map (kbd "s-[") 'better-jumper-jump-backward)
     (define-key map (kbd "s-]") 'better-jumper-jump-forward)
+
+    (define-key map (kbd "s-<backspace>") 'goto-last-change)
 
     (define-key map [(super l)] line-map)
     (define-key line-map (kbd "b") 'bookmark-set)
@@ -295,6 +297,16 @@ When Mac Mnemonic Key mode is enabled, mac-style key bindings are provided."
 
         ))
     ))
+
+(defun isearch-with-initial-region ()
+  "Start `isearch` with the current region (if active)."
+  (interactive)
+  (deactivate-mark)
+  (if (use-region-p)
+      (progn
+        (isearch-mode t nil nil nil)
+        (isearch-yank-string (buffer-substring-no-properties (mark) (point))))
+    (isearch-forward)))
 
 ;; save as.. dialog (shift + command + S)
 (defun mac-mnemonic-key-save-as (filename &optional wildcards)
