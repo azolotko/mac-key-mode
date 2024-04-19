@@ -66,10 +66,6 @@ menu items are added to the File menu and the Edit menu."
   :group 'mac-mnemonic-key-mode
   :type 'boolean)
 
-(defvar mac-mnemonic-key-backup-command-modifier nil
-  "Internal variable.  Do not use this.")
-
-
 (defvar mac-mnemonic-key-mode-map
   (let ((map (make-sparse-keymap))
         (block-map (make-sparse-keymap))
@@ -115,9 +111,6 @@ menu items are added to the File menu and the Edit menu."
     (define-key map (kbd "A-<left>") 'backward-word)
     (define-key map (kbd "A-<right>") 'forward-word)
     (define-key map [A-mouse-1] 'browse-url-at-mouse)
-    (define-key map [C-down-mouse-1] 'mac-mnemonic-key-context-menu)
-    (define-key map [mouse-3] 'mac-mnemonic-key-context-menu)
-;;    (define-key map [C-mouse-1] 'mac-mnemonic-key-context-menu)
     (define-key map [A-S-mouse-1] 'mouse-buffer-menu)
     (define-key map [S-down-mouse-1] 'mac-mnemonic-key-shift-mouse-select)
 
@@ -249,54 +242,16 @@ When Mac Mnemonic Key mode is enabled, mac-style key bindings are provided."
         (setq mac-command-modifier 'super
               mac-option-modifier 'meta)
 
-        (if (boundp 'mac-mnemonic-key-mode-internal)
-            (setq mac-mnemonic-key-mode-internal t))
-
-        ;; turn on advanced settings
-        (when mac-mnemonic-key-advanced-setting
-
-          ;; menu items
-          (define-key-after menu-bar-file-menu [mac-mnemonic-key-file-separator]
-            '("--" . nil) 'recover-session)
-          (define-key-after menu-bar-edit-menu [redo]
-            '(menu-item "Redo" redo
-            :help "Redo the most recent undo"
-            :enable (not (or (eq buffer-undo-list t)
-                             (eq last-buffer-undo-list nil)
-                             ;; ** one more thing here **
-                             (eq buffer-undo-list pending-undo-list)
-                             (eq (cdr buffer-undo-list) pending-undo-list)
-                             )))
-            'undo)
-          (define-key-after menu-bar-edit-menu [mac-mnemonic-key-edit-separator]
-            '("--" . nil) 'redo)
-
-          (define-key minibuffer-local-map [(super z)] 'undo)
-          (define-key minibuffer-local-map [(super v)] 'clipboard-yank)
-          (define-key minibuffer-local-map [(super a)] 'mark-whole-buffer)
-          (define-key minibuffer-local-map [(super x)] 'clipboard-kill-region)
-          (define-key minibuffer-local-map [(super left)] 'beginning-of-line)
-          (define-key minibuffer-local-map [(super right)] 'end-of-line)
-          (define-key minibuffer-local-map (kbd "A-<left>") 'backward-word)
-          (define-key minibuffer-local-map (kbd "A-<right>") 'forward-word)
-          ))
-    (progn
-
-      (if (boundp 'mac-mnemonic-key-mode-internal)
-          (setq mac-mnemonic-key-mode-internal nil))
-
-      ;; turn off advanced settings
-      (when mac-mnemonic-key-advanced-setting
-
-        ;; menu items
-        (global-unset-key [menu-bar file mac-mnemonic-key-file-separator])
-        (global-unset-key [menu-bar file mac-mnemonic-key-show-in-finder])
-        (global-unset-key [menu-bar file mac-mnemonic-key-open-terminal])
-        (global-unset-key [menu-bar edit redo])
-        (global-unset-key [menu-bar edit mac-mnemonic-key-edit-separator])
-
-        ))
-    ))
+        (define-key minibuffer-local-map [(super z)] 'undo)
+        (define-key minibuffer-local-map [(super v)] 'clipboard-yank)
+        (define-key minibuffer-local-map [(super a)] 'mark-whole-buffer)
+        (define-key minibuffer-local-map [(super x)] 'clipboard-kill-region)
+        (define-key minibuffer-local-map [(super left)] 'beginning-of-line)
+        (define-key minibuffer-local-map [(super right)] 'end-of-line)
+        (define-key minibuffer-local-map (kbd "A-<left>") 'backward-word)
+        (define-key minibuffer-local-map (kbd "A-<right>") 'forward-word)
+      )
+    (progn)))
 
 (defun isearch-with-initial-region ()
   "Start `isearch` with the current region (if active)."
@@ -329,72 +284,6 @@ the mouse.  This should be bound to a mouse click event type."
   ;; Use event-end in case called from mouse-drag-region.
   ;; If EVENT is a click, event-end and event-start give same value.
   (posn-set-point (event-end event)))
-
-
-;; Contextual menu
-
-(defun mac-mnemonic-key-context-menu (event)
-  "Pop up a contextual menu."
-  (interactive "e")
-
-  (let ((editable (not buffer-read-only))
-        (pt (save-excursion (mouse-set-point last-nonmenu-event)))
-        beg end
-        )
-
-    ;; getting word boundaries
-    (if (and mark-active
-             (<= (region-beginning) pt) (<= pt (region-end)) )
-        (setq beg (region-beginning)
-              end (region-end))
-      (save-excursion
-        (goto-char pt)
-        (setq end (progn (forward-word) (point)))
-        (setq beg (progn (backward-word) (point)))
-        ))
-
-    ;; popup menu
-    (popup-menu
-     '(nil
-       ["Search in Google"
-        (browse-url
-         (concat "http://www.google.com/search?q="
-                 (url-hexify-string (buffer-substring-no-properties beg end))))
-        :help "Ask a WWW browser to do a Google search"]
-     ["--" nil]
-     ["Cut"   (clipboard-kill-region beg end) :active (and editable mark-active)
-      :help "Delete text in region and copy it to the clipboard"]
-     ["Copy"  (clipboard-kill-ring-save beg end) :active mark-active
-      :help "Copy text in region to the clipboard"]
-     ["Paste" (clipboard-yank) :active editable
-      :help "Paste text from clipboard"]
-     ["--" nil]
-     ("Spelling"
-      ["Spelling..."
-       (progn (goto-char end)(ispell-word)) :active editable
-       :help "Spell-check word at cursor"]
-      ["Check Spelling" (ispell-buffer) :active editable
-       :help "Check spelling of the current buffer"]
-      ["Check Spelling as You Type"
-       (flyspell-mode)
-       :style toggle :selected flyspell-mode :active editable
-       :help "Check spelling while you edit the text"]
-     )
-     ("Font"
-      ["Show Fonts" (ignore) :active nil]
-      ["Bold"       (ignore) :active nil]
-      ["Italic"     (ignore) :active nil]
-      ["Underline"  (ignore) :active nil]
-      ["Outline"    (ignore) :active nil]
-      ["Styles..."  (ignore) :active nil]
-      ["--" nil]
-      ["Show Colors" (ignore) :active nil]
-     )
-
-     ["--" nil]
-     ["Buffers" mouse-buffer-menu
-       :help "Pop up a menu of buffers for selection with the mouse"]
-     ))))
 
 (provide 'mac-mnemonic-key-mode)
 
